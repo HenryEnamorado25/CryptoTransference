@@ -19,10 +19,9 @@
   "homepage": "https://github.com/HenryEnamorado25/CryptoTransference#readme",
   "dependencies": {
     "bitpay-sdk": "^1.4.2102",
+    "dotenv": "^10.0.0",
     "express": "^4.17.2",
+    "node-fetch": "^2.0.0",
     "path": "^0.12.7"
-  },
-  "devDependencies": {
-   
   }
 }

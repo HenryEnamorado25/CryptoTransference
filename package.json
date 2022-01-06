@@ -1,0 +1,28 @@
+{
+  "name": "cryptocurrency",
+  "version": "1.0.0",
+  "description": "This is an app that will send and receive crypto currency",
+  "main": "index.js",
+  "scripts": {
+    "test": "node ./node_modules/bitpay-sdk/setup/BitPaySetup.js",
+    "start": "node index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HenryEnamorado25/CryptoTransference.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/HenryEnamorado25/CryptoTransference/issues"
+  },
+  "homepage": "https://github.com/HenryEnamorado25/CryptoTransference#readme",
+  "dependencies": {
+    "bitpay-sdk": "^1.4.2102",
+    "express": "^4.17.2",
+    "path": "^0.12.7"
+  },
+  "devDependencies": {
+   
+  }
+}

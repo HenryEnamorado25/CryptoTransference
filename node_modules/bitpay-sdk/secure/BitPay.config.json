@@ -1,0 +1,15 @@
+{
+    "BitPayConfiguration": {
+        "Environment": "Test",
+        "EnvConfig": {
+            "Test": {
+                "PrivateKeyPath": "C:\\Users\\henry\\OneDrive\\Escritorio\\crypto\\node_modules\\bitpay-sdk\\setup/../secure/private_key_test.key",
+                "PrivateKey": "",
+                "ApiTokens": {
+                    "merchant": "DKxQZj7qU6WLgGXum3EhSKxMomXZ2WPonC118uS3RjgU",
+                    "payroll": "9qtzugtiaKS3N2WAdF51SYeAGCcKmRfvE9vVDSdt7hda"
+                }
+            }
+        }
+    }
+}

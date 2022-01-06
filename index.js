@@ -48,8 +48,7 @@ app.get('/createinvoice', async (req,res)=>{
             })
         )
     })
-    console.log(response);
-    
+    console.log(response);   
 })
 //webhook to get API tokens to get in use in invoices creation
 app.get('/gettoken', async (req,res)=>{
@@ -70,13 +69,13 @@ app.get('/gettoken', async (req,res)=>{
     const json1 = await response.json();
     console.log(json1);
     process.env.AcquieredTOKEN= json1.data[0].token;
+    console.log(process.env.AcquieredTOKEN);
     res.json(JSON.stringify(
                 {
                 status: "success",
                 code: 200,
                 token: json1.data[0].token
     }));
-
 })
 
 app.get('/getinvoicescreated', async (req,res)=>{

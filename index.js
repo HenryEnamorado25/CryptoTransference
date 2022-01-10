@@ -1,8 +1,11 @@
 const express = require("express");
 const path = require("path");
 const Fetch = require("node-fetch");
+const util = require('util')
 var app = express();
 require('dotenv').config();
+var bitauth = require('bitauth');
+console.log(bitauth);
 //change this to (https://bitpay.com) when it is ready for production
 const Environment = "https://test.bitpay.com";
 let signature;
@@ -11,61 +14,70 @@ var crypto = require("crypto");
 let pairingCode;
 app.set("port", process.env.PORT || 3000);
 
+let x = bitauth.generateSin();
+process.env.GENERATEDTOKEN = x.priv;
+console.log(util.inspect(x, false, null, true));
 
 
-const getKeysAndSign=(combinedText)=>{
-//Creating keys
-const {publicKey,privateKey} = crypto.generateKeyPairSync("rsa",{
-    //YES ITS NAME IS "modulusLength" :|
-    modulusLength: 2048,
-    publicKeyEncoding: {
-        type: "spki",
-        format: "der"
-    },
-    privateKeyEncoding:{
-        type: "pkcs8",
-        format: "der"
-    }
-})
-let x ={privateKey:privateKey.toString('base64')}
-let y = {publicKey:publicKey.toString('base64')}
-process.env.privateKey =x.privateKey;
-process.env.publicKey=y.publicKey;
-// console.log(x.privateKey);
-/////////////////////////////////////////////////////////////////////////////
-// Sign the string
-let string =combinedText;
-let privateKeyString= x.privateKey;
-// console.log(privateKeyString);
-privateKeyString = crypto.createPrivateKey({
-    key: Buffer.from(privateKeyString,"base64"),
-    type: "pkcs8",
-    format: "der"
-})
-// console.log(privateKeyString);
-const sign = crypto.createSign("SHA256")
-sign.update(string)
-sign.end()
-signature= sign.sign(privateKeyString).toString("base64");
 
-// console.log("777****"+signature);
-////////////////////////////////////////////////////
-}
+
+// const getKeysAndSign=(combinedText)=>{
+// //Creating keys
+// const {publicKey,privateKey} = crypto.generateKeyPairSync("rsa",{
+//     //YES ITS NAME IS "modulusLength" :|
+//     modulusLength: 2048,
+//     publicKeyEncoding: {
+//         type: "spki",
+//         format: "der"
+//     },
+//     privateKeyEncoding:{
+//         type: "pkcs8",
+//         format: "der"
+//     }
+// })
+
+// let x ={privateKey:privateKey.toString('hex')}
+// let y = {publicKey:publicKey.toString('hex')}
+// process.env.privateKey =x.privateKey;
+// process.env.publicKey=y.publicKey;
+// console.log(x);
+// /////////////////////////////////////////////////////////////////////////////
+// // Sign the string
+// let string =combinedText;
+// let privateKeyString= x.privateKey;
+// // console.log(privateKeyString);
+// privateKeyString = crypto.createPrivateKey({
+//     key: Buffer.from(privateKeyString,"hex"),
+//     type: "pkcs8",
+//     format: "der"
+// })
+// // console.log(privateKeyString);
+// const sign = crypto.createSign("SHA256")
+// sign.update(string)
+// sign.end()
+// signature= sign.sign(privateKeyString).toString("hex");
+
+// // console.log("777****"+signature);
+// ////////////////////////////////////////////////////
+// }
 
 
 //Webhook to create a invoice
 app.get('/createinvoice', async (req,res)=>{
-    getKeysAndSign("https://test.bitpay.com/invoices{'currency': 'USD','price': 5,'token':'TfBDiR6sC7X7r3xroD6T1zaiCvGkgzhKtGu'}");
+    // getKeysAndSign(`https://test.bitpay.com/invoices{'currency':'USD','price':5,'token':'${process.env.TOKEN}'}`);
     const hookUrl= `${Environment}/invoices`;
+    let dataToSign = hookUrl+`{"currency":"USD","price":5,"token":'${process.env.TOKEN}'}`;
+    let signatureGen = bitauth.sign(dataToSign,process.env.PKT);
+    console.log(signatureGen.toString('hex'));
     const options = {
-        "headers": { "X-Accept-Version": "2.0.0","Content-Type":"application/json","X-Identity":`${process.env.publicKey}`
-        ,"X-Signature":`${signature}`},
+        "headers": { "X-Accept-Version": "2.0.0","Content-Type":"application/json","X-Identity": `${bitauth.getPublicKeyFromPrivateKey(process.env.GENERATEDTOKEN)}`
+        ,"X-Signature":bitauth.sign(dataToSign,process.env.GENERATEDTOKEN).toString("hex")},
         "method": "POST",
         //I MAY NEED JSON.stringify()
         "body":JSON.stringify( {
-            "currency": "USD",
-            "price": 5,
-            "token":`${process.env.AcquieredTOKEN}`
+            "currency":"USD",
+            "price":5,
+            "token":`${process.env.TOKEN}`
         })
     }
     console.log(options);
@@ -83,14 +95,16 @@ app.get('/createinvoice', async (req,res)=>{
 //webhook to get API tokens to get in use in invoices creation
 app.get('/gettoken', async (req,res)=>{
     const hookUrl= `${Environment}/tokens`;
+    // getKeysAndSign(`${hookUrl}{"id":'${process.env.SIN}',"facade":"merchant","label":"test Investacard"}`);
+    // ,"X-Identity":`${process.env.publicKey}`,"X-Signature":`${signature}`
     const options = {
         "headers": { "X-Accept-Version": "2.0.0","Content-Type":"application/json"},
         "method": "POST",
         //I MAY NEED JSON.stringify()
-        "body":JSON.stringify( {
-            "id": `${process.env.SIN}`,
-            "facade": "merchant",
-            "label": "test Investacard"
+        "json":JSON.stringify( {
+            "id":`${process.env.SIN}`,
+            "facade":"payroll",
+            "label":"test payroll Investacard"
         }) 
     }
     console.log(options);
@@ -109,21 +123,17 @@ app.get('/gettoken', async (req,res)=>{
     }));
 })
 
-app.get('/gettokenpairing', async (req,res)=>{
+app.get('/gettokenaccepted', async (req,res)=>{
     const hookUrl= `${Environment}/tokens`;
+    // getKeysAndSign(`${hookUrl}true`);
     const options = {
-        "headers": { "X-Accept-Version": "2.0.0","Content-Type":"application/json"},
-        "method": "POST",
+        "headers": { "X-Accept-Version": "2.0.0","Content-Type":"application/json","X-Identity":`${process.env.publicKey}`,"X-Signature":`${signature}`},
+        "method": "GET",
         //I MAY NEED JSON.stringify()
-        "body":JSON.stringify( {
-            "id": `${process.env.SIN}`,
-            "pairingCode": `${pairingCode}`,
-            "label": "test Investacard",
-            "facade": "merchant"
-        }) 
+        "json":true
     }
     console.log(options);
-    console.log(process.env.SIN);
+    // console.log(process.env.SIN);
     const response = await Fetch(hookUrl, options)
     const json = await response.json();
 
@@ -144,9 +154,29 @@ app.get('/getinvoicescreated', async (req,res)=>{
         "headers": { "X-Accept-Version": "2.0.0","Content-Type":"application/json"},
         "method": "POST",
         //I MAY NEED JSON.stringify()
-        "body":JSON.stringify( {
-            "id": `${process.env.SIN}`
-        }) 
+        "json":true
+    }
+    console.log(options);
+    console.log(process.env.SIN);
+    const response = await Fetch(hookUrl, options)
+    const json = await response.json();
+    console.log(json);
+    // console.log(process.env.AcquieredTOKEN);
+    res.json(JSON.stringify(
+                {
+                status: "success",
+                code: 200,
+                token: json
+    }));
+    // 
+})
+app.get('/sentcryptoinvitation', async (req,res)=>{
+    const hookUrl= `${Environment}/recipients`;
+    const options = {
+        "headers": { "X-Accept-Version": "2.0.0","Content-Type":"application/json"},
+        "method": "POST",
+        //I MAY NEED JSON.stringify()
+        "json":true
     }
     console.log(options);
     console.log(process.env.SIN);

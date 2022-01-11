@@ -64,20 +64,21 @@ console.log(util.inspect(x, false, null, true));
 
 //Webhook to create a invoice
 app.get('/createinvoice', async (req,res)=>{
+    console.log(process.env.BITPAYPUBLICKEY);
     // getKeysAndSign(`https://test.bitpay.com/invoices{'currency':'USD','price':5,'token':'${process.env.TOKEN}'}`);
     const hookUrl= `${Environment}/invoices`;
-    let dataToSign = hookUrl+`{"currency":"USD","price":5,"token":'${process.env.TOKEN}'}`;
-    let signatureGen = bitauth.sign(dataToSign,process.env.PKT);
-    console.log(signatureGen.toString('hex'));
+    let dataToSign = hookUrl+`{"currency":"USD","price":5,"token":'${process.env.MERCHANT_TOKEN}'}`;
+    // let signatureGen = bitauth.sign(dataToSign,process.env.MERCHANT_TOKEN);
+    // console.log(process.env.SIN);
     const options = {
-        "headers": { "X-Accept-Version": "2.0.0","Content-Type":"application/json","X-Identity": `${bitauth.getPublicKeyFromPrivateKey(process.env.GENERATEDTOKEN)}`
-        ,"X-Signature":bitauth.sign(dataToSign,process.env.GENERATEDTOKEN).toString("hex")},
+        "headers": { "X-Accept-Version": "2.0.0","Content-Type":"application/json"
+        ,"X-Signature":bitauth.sign(dataToSign,process.env.BITPAYPUBLICKEY)},
         "method": "POST",
         //I MAY NEED JSON.stringify()
         "body":JSON.stringify( {
             "currency":"USD",
             "price":5,
-            "token":`${process.env.TOKEN}`
+            "token":`${process.env.MERCHANT_TOKEN}`
         })
     }
     console.log(options);
@@ -176,10 +177,42 @@ app.get('/sentcryptoinvitation', async (req,res)=>{
         "headers": { "X-Accept-Version": "2.0.0","Content-Type":"application/json"},
         "method": "POST",
         //I MAY NEED JSON.stringify()
-        "json":true
+        "body":JSON.stringify( {
+            "recipient":[{
+                "email": "henryenamo@gmail.com"
+            }],
+            "token":`${process.env.POS}`
+        })
     }
     console.log(options);
-    console.log(process.env.SIN);
+    console.log(process.env.MERCHANT_TOKEN);
+    const response = await Fetch(hookUrl, options)
+    const json = await response.json();
+    console.log(json);
+    // console.log(process.env.AcquieredTOKEN);
+    res.json(JSON.stringify(
+                {
+                status: "success",
+                code: 200,
+                token: json
+    }));
+    // 
+})
+app.get('/retrievetokenapproved', async (req,res)=>{
+    const hookUrl= `${Environment}/tokens`;
+    const options = {
+        "headers": { "X-Accept-Version": "2.0.0","Content-Type":"application/json"},
+        "method": "POST",
+        //I MAY NEED JSON.stringify()
+        "body":JSON.stringify( {
+            "recipient":[{
+                "email": "henryenamo@gmail.com"
+            }],
+            "token":`${process.env.POS}`
+        })
+    }
+    console.log(options);
+    console.log(process.env.MERCHANT_TOKEN);
     const response = await Fetch(hookUrl, options)
     const json = await response.json();
     console.log(json);
